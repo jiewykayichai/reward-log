@@ -2,6 +2,7 @@
 Reward & Punishment Log
 A small Streamlit app that stores its data in Google Sheets.
 """
+import json
 import random
 import uuid
 from datetime import datetime
@@ -11,6 +12,8 @@ import gspread
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+import streamlit.components.v1 as components
+
 
 # ------------------------------------------------------------------
 # SETTINGS - edit these freely
@@ -68,20 +71,58 @@ div[class*="st-key-"][class*="reward"] button p {color: white !important; font-w
 st.markdown(CSS, unsafe_allow_html=True)
 
 
+CONFETTI_JS = """
+<script>
+// run id: __NONCE__
+(function () {
+  try {
+    const emojis = __EMOJIS__;
+    const count = __COUNT__;
+    const win = window.parent;
+    const doc = win.document;
+    const W = win.innerWidth, H = win.innerHeight;
+
+    const layer = doc.createElement("div");
+    layer.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:999999;overflow:hidden;";
+    doc.body.appendChild(layer);
+
+    for (let i = 0; i < count; i++) {
+      const s = doc.createElement("span");
+      s.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      const size = 26 + Math.random() * 24;
+      s.style.cssText = "position:absolute;left:" + (W / 2) + "px;top:" + H + "px;font-size:" + size + "px;";
+      layer.appendChild(s);
+
+      const dx = (Math.random() - 0.5) * W * 0.9;          // sideways spread
+      const peak = -(H * 0.45 + Math.random() * H * 0.5);  // how high it flies
+      const rot = (Math.random() - 0.5) * 720;             // spin
+
+      s.animate([
+        { transform: "translate(-50%, 0) scale(0.3) rotate(0deg)", opacity: 1 },
+        { transform: "translate(calc(-50% + " + dx + "px), " + peak + "px) scale(1.1) rotate(" + (rot / 2) + "deg)", opacity: 1, offset: 0.45 },
+        { transform: "translate(calc(-50% + " + (dx * 1.3) + "px), 40px) scale(0.9) rotate(" + rot + "deg)", opacity: 0 }
+      ], {
+        duration: 2200 + Math.random() * 1400,
+        delay: Math.random() * 500,
+        easing: "cubic-bezier(.2,.8,.3,1)",
+        fill: "forwards"
+      });
+    }
+    win.setTimeout(function () { layer.remove(); }, 5000);
+  } catch (e) {
+    console.log("Confetti failed:", e);
+  }
+})();
+</script>
+"""
+
+
 def show_confetti(emojis, n=45):
-    pieces = []
-    for _ in range(n):
-        x = random.randint(-45, 45)
-        y = random.randint(-95, -45)
-        r = random.randint(-360, 360)
-        size = random.randint(26, 48)
-        delay = random.uniform(0, 0.6)
-        dur = random.uniform(2.2, 3.6)
-        pieces.append(
-            f'<span class="confetti" style="--x:{x}vw;--y:{y}vh;--r:{r}deg;font-size:{size}px;'
-            f'animation-duration:{dur:.2f}s;animation-delay:{delay:.2f}s">{random.choice(emojis)}</span>'
-        )
-    st.markdown("<div>" + "".join(pieces) + "</div>", unsafe_allow_html=True)
+    html = (CONFETTI_JS
+            .replace("__EMOJIS__", json.dumps(emojis))
+            .replace("__COUNT__", str(n))
+            .replace("__NONCE__", uuid.uuid4().hex))
+    components.html(html, height=0)
 
 
 def fmt(x):
